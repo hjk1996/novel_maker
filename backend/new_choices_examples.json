@@ -1,0 +1,65 @@
+[
+  {
+    "previous_situation": "he protagonist has just reached the orbit of a newly discovered alien planet.",
+    "choice_1": "The protagonist decides to land on the planet and start an exploration.",
+    "choice_2": "The protagonist chooses to stay on the spacecraft and remotely study the planet.",
+    "choice_3": "The protagonist attempts to establish a communication link with the planet.",
+    "choice_4": "The protagonist decides to leave the orbit due to the planet's dangerous atmosphere."
+  },
+  {
+    "previous_situation": "A local comedian accidentally becomes the mayor of a small town.",
+    "choice_1": "The comedian organizes a town-wide comedy festival to boost morale.",
+    "choice_2": "The comedian tries to resign but ends up becoming more popular.",
+    "choice_3": "The comedian uses humor to solve an ongoing dispute in the town.",
+    "choice_4": "The comedian secretly enlists a more qualified friend to handle the mayor's duties."
+  },
+  {
+    "previous_situation": "An undercover agent uncovers a plot to sabotage an international summit.",
+    "choice_1": "The agent decides to infiltrate the group planning the sabotage.",
+    "choice_2": "The agent alerts their superiors but is met with disbelief.",
+    "choice_3": "The agent teams up with a journalist to expose the plot.",
+    "choice_4": "The agent works alone to thwart the sabotage during the summit."
+  },
+  {
+    "previous_situation": "A mermaid falls in love with a human after saving them from a shipwreck.",
+    "choice_1": "The mermaid reveals her true identity to the human.",
+    "choice_2": "The mermaid seeks a sea witch's help to become human.",
+    "choice_3": "The mermaid decides to observe the human from a distance.",
+    "choice_4": "The mermaid brings the human to her underwater world."
+  },
+  {
+    "previous_situation": "A scientist accidentally discovers a way to time travel to the past.",
+    "choice_1": "The scientist decides to visit a significant historical event.",
+    "choice_2": "The scientist tries to change a personal regret from their past.",
+    "choice_3": "The scientist explores the origins of an ancient civilization.",
+    "choice_4": "The scientist becomes trapped in a time loop and must find a way out."
+  },
+  {
+    "previous_situation": "In ancient Egypt, a scribe discovers a hidden message in a pharaoh's tomb.",
+    "choice_1": "The scribe investigates the tomb further to uncover its secrets.",
+    "choice_2": "The scribe reports the discovery to the high priest.",
+    "choice_3": "The scribe keeps the message a secret, fearing it may be a curse.",
+    "choice_4": "The scribe deciphers the message, leading to an unexpected revelation."
+  },
+  {
+    "previous_situation": "A new superhero struggles to control their recently discovered powers.",
+    "choice_1": "The superhero seeks help from a retired hero to master their powers.",
+    "choice_2": "The superhero tries to hide their powers and live a normal life.",
+    "choice_3": "The superhero uses their powers to become a local vigilante.",
+    "choice_4": "The superhero\u2019s powers attract the attention of a villainous group."
+  },
+  {
+    "previous_situation": "A rogue spaceship captain finds an ancient alien artifact in the galaxy.",
+    "choice_1": "The captain sells the artifact on the black market.",
+    "choice_2": "The captain studies the artifact, unlocking its mysteries.",
+    "choice_3": "The captain is pursued by an alien race claiming the artifact.",
+    "choice_4": "The captain uses the artifact to bargain for peace in a galactic conflict."
+  },
+  {
+    "previous_situation": "A modern-day witch discovers a secret magical society in her city.",
+    "choice_1": "The witch decides to join the society to learn more about her powers.",
+    "choice_2": "The witch exposes the society to the non-magical world.",
+    "choice_3": "The witch uncovers a dark secret within the society.",
+    "choice_4": "The witch allies with magical creatures to reform the society."
+  }
+]
