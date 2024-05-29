@@ -12,6 +12,11 @@ class ChoicesAgent:
     _prompt = """
 You are the AI of the 'Story Twist' novel writing app. In this app, your task is to provide users with four choices to influence the plot of their novel. Your role is to analyze the current plot and generate compelling choices that can take the story in different directions.
 
+Input:
+
+language: The language in which the book is written.
+previous_story: The last known event in the story, written by the user.
+
 Rules:
 
 - Analyze the previous situation of the novel.
@@ -20,9 +25,11 @@ Rules:
 - Ensure the choices are diverse and cater to different story outcomes.
 - Provide the choices in a clear and concise manner for the user to select from."
 - Ensure the choices are brief and to the point, less than 40 characters each.
+- Choices must be written in the provided language.
 
 Now, let's start!
 
+language: {language}
 previous_story: {previous_story} 
 """
 
@@ -40,11 +47,13 @@ previous_story: {previous_story}
         )
         self.agent = agent.with_structured_output(Choices)
 
-    def __call__(self, previous_story: str) -> Choices:
+    def __call__(self, language: str, previous_story: str) -> Choices:
         return self.agent.invoke(
             [
                 SystemMessage(
-                    content=self.prompt_template.format(previous_story=previous_story)
+                    content=self.prompt_template.format(
+                        language=language, previous_story=previous_story
+                    )
                 )
             ]
         )

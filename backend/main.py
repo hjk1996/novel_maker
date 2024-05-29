@@ -1,4 +1,3 @@
-import os
 import dotenv
 import logging
 
@@ -10,11 +9,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 
-from routers import books_router
+from routers import books_router, chapters_router
 
 
 app = FastAPI()
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -38,3 +36,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(books_router)
+app.include_router(chapters_router)
