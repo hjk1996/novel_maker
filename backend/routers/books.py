@@ -5,17 +5,17 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
-from middlewares import TokenPayload, get_current_user
+
+from di.auth import get_current_user
+from di.db import get_book_table
+from di.agent import get_choices_agent, get_next_story_agent
+from models import TokenPayload
 from chat_agents import NextStoryAgent, ChoicesAgent
 from models import Book, Chapter, Choices
-from db import get_book_table
+from chat_agents import ChoicesAgent, NextStoryAgent
 
 
 router = APIRouter()
-
-next_stroy_agent = NextStoryAgent()
-choices_agent = ChoicesAgent()
-book_table = get_book_table()
 
 
 class CreateBookBody(BaseModel):
@@ -31,6 +31,7 @@ class CreateBookBody(BaseModel):
 async def create_book(
     user_id: str,
     body: CreateBookBody,
+    table=Depends(get_book_table),
     current_user: TokenPayload = Depends(get_current_user),
 ):
     if user_id != current_user.sub:
@@ -49,7 +50,7 @@ async def create_book(
         "created_at": timestamp,
         "chapters": [],
     }
-    response = book_table.put_item(
+    response = table.put_item(
         Item=new_book, ConditionExpression="attribute_not_exists(id)"
     )
     status_code = response["ResponseMetadata"]["HTTPStatusCode"]
@@ -59,7 +60,7 @@ async def create_book(
     return new_book
 
 
-class UserBookListItemSchema(BaseModel):
+class UserBookListItemResponseSchema(BaseModel):
     id: str
     user_id: str
     title: str
@@ -70,11 +71,13 @@ class UserBookListItemSchema(BaseModel):
 
 @router.get(
     "/users/{user_id}/books/",
-    response_model=list[UserBookListItemSchema],
+    response_model=list[UserBookListItemResponseSchema],
     status_code=status.HTTP_200_OK,
 )
 async def get_user_book_list(
-    user_id: str, current_user: TokenPayload = Depends(get_current_user)
+    user_id: str,
+    table=Depends(get_book_table),
+    current_user: TokenPayload = Depends(get_current_user),
 ):
     if user_id != current_user.sub:
         raise HTTPException(
@@ -82,7 +85,7 @@ async def get_user_book_list(
             detail="Not authorized to access this user's books",
         )
 
-    response = book_table.scan(
+    response = table.scan(
         FilterExpression="user_id = :user_id",
         ExpressionAttributeValues={
             ":user_id": user_id,
@@ -99,7 +102,10 @@ async def get_user_book_list(
     status_code=status.HTTP_200_OK,
 )
 async def get_book(
-    user_id: str, book_id: str, current_user: TokenPayload = Depends(get_current_user)
+    user_id: str,
+    book_id: str,
+    table=Depends(get_book_table),
+    current_user: TokenPayload = Depends(get_current_user),
 ):
     if user_id != current_user.sub:
         raise HTTPException(
@@ -107,7 +113,7 @@ async def get_book(
             detail="Not authorized to access this user's books",
         )
 
-    response = book_table.get_item(Key={"id": book_id})
+    response = table.get_item(Key={"id": book_id})
     item = response.get("Item")
     if not item:
         raise HTTPException(status_code=404, detail="Book not found")
@@ -130,8 +136,15 @@ async def update_book(
     user_id: str,
     book_id: str,
     body: UpdateBookBody,
+    table=Depends(get_book_table),
     current_user: TokenPayload = Depends(get_current_user),
 ):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     update_expressions = []
     expression_attribute_values = {}
 
@@ -158,7 +171,7 @@ async def update_book(
 
     update_expression = "SET " + ", ".join(update_expressions)
 
-    response = book_table.update_item(
+    response = table.update_item(
         Key={"id": book_id},
         UpdateExpression=update_expression,
         ExpressionAttributeValues=expression_attribute_values,
@@ -175,7 +188,10 @@ async def update_book(
     "/users/{user_id}/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 def delete_book(
-    user_id: str, book_id: str, current_user: TokenPayload = Depends(get_current_user)
+    user_id: str,
+    book_id: str,
+    table=Depends(get_book_table),
+    current_user: TokenPayload = Depends(get_current_user),
 ):
     if user_id != current_user.sub:
         raise HTTPException(
@@ -183,7 +199,7 @@ def delete_book(
             detail="Not authorized to access this user's books",
         )
 
-    response = book_table.delete_item(Key={"id": book_id})
+    response = table.delete_item(Key={"id": book_id})
     status_code = response["ResponseMetadata"]["HTTPStatusCode"]
     if status_code != 200:
         raise HTTPException(status_code=500, detail="Failed to delete book item")
@@ -200,6 +216,7 @@ async def generate_choices(
     book_id: str,
     body: Book,
     current_user: TokenPayload = Depends(get_current_user),
+    choices_agent: ChoicesAgent = Depends(get_choices_agent),
 ):
 
     if user_id != current_user.sub:
@@ -227,6 +244,8 @@ async def generate_next_story(
     user_id: str,
     book_id: str,
     body: NextStoryBody,
+    table=Depends(get_book_table),
+    next_story_agent: NextStoryAgent = Depends(get_next_story_agent),
     current_user: TokenPayload = Depends(get_current_user),
 ):
 
@@ -237,7 +256,7 @@ async def generate_next_story(
         )
 
     story = body.book.get_story()
-    next_story = next_stroy_agent(
+    next_story = next_story_agent(
         genres=body.book.genres,
         language=body.book.book_language,
         previous_story=story,
@@ -246,7 +265,7 @@ async def generate_next_story(
     new_book = body.book.model_copy()
     new_book.chapters[-1].content += " " + next_story.content
 
-    response = book_table.update_item(
+    response = table.update_item(
         Key={"id": book_id},
         UpdateExpression="SET chapters = :chapters",
         ExpressionAttributeValues={

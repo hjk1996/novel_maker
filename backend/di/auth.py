@@ -3,9 +3,10 @@ import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwk, jwt
-
 from pydantic import BaseModel
 import requests
+
+from models import TokenPayload
 
 # AWS Cognito 설정
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
@@ -14,11 +15,6 @@ COGNITO_REGION = os.getenv("COGNITO_REGION")
 COGNITO_JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-class TokenPayload(BaseModel):
-    sub: str
-    username: str
 
 
 # Cognito의 JWKS (JSON Web Key Set)를 가져옵니다.
