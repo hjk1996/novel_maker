@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 
-from routers import books_router, chapters_router
+from routers import books_router, chapters_router, auth_router
 
 
 app = FastAPI()
@@ -37,3 +37,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.include_router(books_router)
 app.include_router(chapters_router)
+app.include_router(auth_router)

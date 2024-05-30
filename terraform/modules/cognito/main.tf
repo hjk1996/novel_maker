@@ -1,7 +1,7 @@
 resource "aws_cognito_user_pool" "user_pool" {
   name = "novel-maker-user-pool"
 
-  # 비밀번호 정채
+  # 비밀번호 정책
   password_policy {
     minimum_length    = 8
     require_lowercase = true
@@ -24,9 +24,13 @@ resource "aws_cognito_user_pool" "user_pool" {
     }
   }
 
+
   admin_create_user_config {
     allow_admin_create_user_only = false
   }
+
+  # 이거 설정해야 이메일 회원가입할 때 자동으로 인증 메일 보내줌
+  auto_verified_attributes = ["email"]
 
   # 이메일 인증 템플릿
   verification_message_template {

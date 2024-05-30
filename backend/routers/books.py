@@ -2,15 +2,17 @@ import uuid
 from datetime import datetime, timezone
 
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, status, Depends
+from pydantic import BaseModel
 
+from middlewares import TokenPayload, get_current_user
 from chat_agents import NextStoryAgent, ChoicesAgent
 from models import Book, Chapter, Choices
 from db import get_book_table
 
 
 router = APIRouter()
+
 next_stroy_agent = NextStoryAgent()
 choices_agent = ChoicesAgent()
 book_table = get_book_table()
@@ -22,11 +24,21 @@ class CreateBookBody(BaseModel):
 
 
 @router.post(
-    "/users/{user_id}/books/",
+    "/users/{user_id}/new-book/",
     response_model=Book,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_book(user_id: str, body: CreateBookBody):
+async def create_book(
+    user_id: str,
+    body: CreateBookBody,
+    current_user: TokenPayload = Depends(get_current_user),
+):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to create books for this user",
+        )
+
     book_id = str(uuid.uuid4())
     timestamp = int(datetime.now(timezone.utc).timestamp())
     new_book = {
@@ -61,7 +73,15 @@ class UserBookListItemSchema(BaseModel):
     response_model=list[UserBookListItemSchema],
     status_code=status.HTTP_200_OK,
 )
-async def get_user_book_list(user_id: str):
+async def get_user_book_list(
+    user_id: str, current_user: TokenPayload = Depends(get_current_user)
+):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     response = book_table.scan(
         FilterExpression="user_id = :user_id",
         ExpressionAttributeValues={
@@ -78,7 +98,15 @@ async def get_user_book_list(user_id: str):
     response_model=Book,
     status_code=status.HTTP_200_OK,
 )
-async def get_book(user_id: str, book_id: str):
+async def get_book(
+    user_id: str, book_id: str, current_user: TokenPayload = Depends(get_current_user)
+):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     response = book_table.get_item(Key={"id": book_id})
     item = response.get("Item")
     if not item:
@@ -98,7 +126,12 @@ class UpdateBookBody(BaseModel):
     response_model=Book,
     status_code=status.HTTP_200_OK,
 )
-async def update_book(user_id: str, book_id: str, body: UpdateBookBody):
+async def update_book(
+    user_id: str,
+    book_id: str,
+    body: UpdateBookBody,
+    current_user: TokenPayload = Depends(get_current_user),
+):
     update_expressions = []
     expression_attribute_values = {}
 
@@ -141,7 +174,15 @@ async def update_book(user_id: str, book_id: str, body: UpdateBookBody):
 @router.delete(
     "/users/{user_id}/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT
 )
-def delete_book(user_id: str, book_id: str):
+def delete_book(
+    user_id: str, book_id: str, current_user: TokenPayload = Depends(get_current_user)
+):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     response = book_table.delete_item(Key={"id": book_id})
     status_code = response["ResponseMetadata"]["HTTPStatusCode"]
     if status_code != 200:
@@ -154,7 +195,19 @@ def delete_book(user_id: str, book_id: str):
     response_model=Choices,
     status_code=status.HTTP_200_OK,
 )
-async def generate_choices(user_id: str, book_id: str, body: Book):
+async def generate_choices(
+    user_id: str,
+    book_id: str,
+    body: Book,
+    current_user: TokenPayload = Depends(get_current_user),
+):
+
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     story = body.get_story()
     choices = choices_agent(language=body.book_language, previous_story=story)
     return choices
@@ -170,7 +223,19 @@ class NextStoryBody(BaseModel):
     response_model=Book,
     status_code=status.HTTP_200_OK,
 )
-async def generate_next_story(user_id: str, book_id: str, body: NextStoryBody):
+async def generate_next_story(
+    user_id: str,
+    book_id: str,
+    body: NextStoryBody,
+    current_user: TokenPayload = Depends(get_current_user),
+):
+
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+
     story = body.book.get_story()
     next_story = next_stroy_agent(
         genres=body.book.genres,
