@@ -7,7 +7,7 @@ dotenv.load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-
+from fastapi.middleware.cors import CORSMiddleware
 
 from routers import books_router, chapters_router, auth_router
 
@@ -15,6 +15,18 @@ from routers import books_router, chapters_router, auth_router
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.exception_handler(HTTPException)
