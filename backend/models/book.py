@@ -11,10 +11,11 @@ class Book(BaseModel):
     id: str
     user_id: str
     title: str
-    book_language: str | None = None
-    cover_url: str | None = None
+    description: str
     genres: list[str]
     created_at: int
+    book_language: str | None = None
+    cover_url: str | None = None
     chapters: list[Chapter] = []
     
     def get_story(self) -> str:

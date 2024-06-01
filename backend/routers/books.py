@@ -20,6 +20,7 @@ router = APIRouter()
 
 class CreateBookBody(BaseModel):
     title: str
+    description: str
     genres: list[str]
 
 
@@ -34,6 +35,7 @@ async def create_book(
     table=Depends(get_book_table),
     current_user: TokenPayload = Depends(get_current_user),
 ):
+    
     if user_id != current_user.sub:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -46,6 +48,7 @@ async def create_book(
         "id": book_id,
         "user_id": user_id,
         "title": body.title,
+        "description": body.description,
         "genres": body.genres,
         "created_at": timestamp,
         "chapters": [],

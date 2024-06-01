@@ -44,6 +44,9 @@ dependencies:
   dartz: ^0.10.1
   flutter_secure_storage: ^4.2.1
   shared_preferences: ^2.2.3
+  salomon_bottom_bar: ^3.3.2
+  gsform: ^0.3.6
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
