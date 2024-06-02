@@ -35,7 +35,7 @@ async def create_book(
     table=Depends(get_book_table),
     current_user: TokenPayload = Depends(get_current_user),
 ):
-    
+
     if user_id != current_user.sub:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -67,6 +67,7 @@ class UserBookListItemResponseSchema(BaseModel):
     id: str
     user_id: str
     title: str
+    description: str | None = None
     cover_url: str | None = None
     genres: list[str]
     created_at: int
@@ -93,7 +94,7 @@ async def get_user_book_list(
         ExpressionAttributeValues={
             ":user_id": user_id,
         },
-        ProjectionExpression="id, user_id, title, cover_url, genres, created_at",
+        ProjectionExpression="id, user_id, title, description, cover_url, genres, created_at",
     )
     items = response.get("Items", [])
     return items
