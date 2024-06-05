@@ -50,6 +50,8 @@ dependencies:
   carousel_slider: ^4.2.1
   auto_size_text: ^3.0.0
   giffy_dialog: ^2.1.0
+  flutter_speed_dial: ^7.0.0
+  flutter_quill: ^9.3.11
 
 dev_dependencies:
   flutter_test:

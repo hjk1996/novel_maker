@@ -3,15 +3,15 @@ from pydantic import BaseModel
 
 class Chapter(BaseModel):
     chapter_name: str | None = None
+    document: list[dict] | None = None
     summary: str | None = None
-    content: str
 
 
 class Book(BaseModel):
     id: str
     user_id: str
     title: str
-    description: str
+    description: str 
     genres: list[str]
     created_at: int
     book_language: str | None = None
