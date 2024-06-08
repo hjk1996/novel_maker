@@ -6,20 +6,20 @@ class NextStory(BaseModel):
 
 
 class Choices(BaseModel):
-    choice_1: str = Field(description="Choice 1")
-    choice_2: str = Field(description="Choice 2")
-    choice_3: str = Field(description="Choice 3")
-    choice_4: str = Field(description="Choice 4")
+    first: str = Field(description="Choice 1")
+    second: str = Field(description="Choice 2")
+    third: str = Field(description="Choice 3")
+    fourth: str = Field(description="Choice 4")
 
     def __getitem__(self, index):
         match index:
             case 1:
-                return self.choice_1
+                return self.first
             case 2:
-                return self.choice_2
+                return self.second
             case 3:
-                return self.choice_3
+                return self.third
             case 4:
-                return self.choice_4
+                return self.fourth
             case _:
                 raise IndexError("Choices index out of range")

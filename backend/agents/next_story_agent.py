@@ -21,21 +21,29 @@ choice: The specific direction the user has chosen for the story.
 
 Rules:
 
-- The 'next story' should directly continue from the 'choice'.
+- The 'next story' should directly continue from the 'choice' and the paragraph of the last chapter.
 - Maintain the original story's tone and style for consistency.
 - Keep the 'next story' concise but descriptive to inspire further writing.
 - Avoid introducing new characters or elements that deviate from the plot.
 - Do not generate chapter names or numbers.
 - Limit the 'next story' to 300 characters.
-- Ensure the 'next situation' allows for further plot development.
+- Ensure the 'next story' allows for further plot development.
 - Focus on meaningful plot or character advancement.
+- Focus on the "last_paragraph" attribute to generate story that ensure a natural continuation of the story.
 
 Let's begin!
 
-genres: {genres}
-language: {language}
-previous_story: {previous_story}
-choice: {choice}
+
+
+
+previous_story
+```
+{previous_story}
+```
+choice
+```
+{choice}
+```
     """
 
     prompt_template = PromptTemplate(
@@ -51,18 +59,15 @@ choice: {choice}
         )
         self.agent = agent.with_structured_output(NextStory)
 
-    def __call__(
-        self, genres: list[str], language: str, previous_story: str, choice: str
-    ) -> NextStory:
-        return self.agent.invoke(
+    async def __call__(self, previous_story: str, choice: str) -> NextStory:
+        response = await self.agent.ainvoke(
             [
                 SystemMessage(
                     content=self.prompt_template.format(
-                        genres=", ".join(genres),
-                        language=language,
                         previous_story=previous_story,
                         choice=choice,
                     )
                 )
             ]
         )
+        return response

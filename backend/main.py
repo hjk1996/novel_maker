@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import books_router, chapters_router, auth_router
 
 
+
+
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

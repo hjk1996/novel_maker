@@ -1,18 +1,22 @@
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import quote
 
+import requests
 
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 
 from di.auth import get_current_user
 from di.db import get_book_table
-from di.agent import get_choices_agent, get_next_story_agent
+from di.agent import get_choices_agent, get_next_story_agent, get_dall_e_agent
+from di.http_client import get_http_client
 from models import TokenPayload
-from chat_agents import NextStoryAgent, ChoicesAgent
-from models import Book, Chapter, Choices
-from chat_agents import ChoicesAgent, NextStoryAgent
+from agents import NextStoryAgent, ChoicesAgent
+from models import Book, Chapter, Choices, NextStory
+from agents import ChoicesAgent, NextStoryAgent, DallEAgent
 
 
 router = APIRouter()
@@ -63,19 +67,9 @@ async def create_book(
     return new_book
 
 
-class UserBookListItemResponseSchema(BaseModel):
-    id: str
-    user_id: str
-    title: str
-    description: str | None = None
-    cover_url: str | None = None
-    genres: list[str]
-    created_at: int
-
-
 @router.get(
     "/users/{user_id}/books/",
-    response_model=list[UserBookListItemResponseSchema],
+    response_model=list[Book],
     status_code=status.HTTP_200_OK,
 )
 async def get_user_book_list(
@@ -94,7 +88,6 @@ async def get_user_book_list(
         ExpressionAttributeValues={
             ":user_id": user_id,
         },
-        ProjectionExpression="id, user_id, title, description, cover_url, genres, created_at",
     )
     items = response.get("Items", [])
     return items
@@ -116,7 +109,6 @@ async def get_book(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user's books",
         )
-
     response = table.get_item(Key={"id": book_id})
     item = response.get("Item")
     if not item:
@@ -222,15 +214,15 @@ async def generate_choices(
     current_user: TokenPayload = Depends(get_current_user),
     choices_agent: ChoicesAgent = Depends(get_choices_agent),
 ):
-
     if user_id != current_user.sub:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user's books",
         )
 
-    story = body.get_story()
-    choices = choices_agent(language=body.book_language, previous_story=story)
+    story = body.get_story_xml()
+    print(story)
+    choices = await choices_agent(language=body.book_language, previous_story=story)
     return choices
 
 
@@ -241,44 +233,58 @@ class NextStoryBody(BaseModel):
 
 @router.post(
     "/users/{user_id}/books/{book_id}/next-story",
-    response_model=Book,
+    response_model=NextStory,
     status_code=status.HTTP_200_OK,
 )
 async def generate_next_story(
     user_id: str,
     book_id: str,
     body: NextStoryBody,
-    table=Depends(get_book_table),
     next_story_agent: NextStoryAgent = Depends(get_next_story_agent),
     current_user: TokenPayload = Depends(get_current_user),
 ):
+    if user_id != current_user.sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this user's books",
+        )
+    previous_story = body.book.get_story_xml()
+    print(previous_story)
+    next_story = await next_story_agent(
+        previous_story=previous_story,
+        choice=body.choice,
+    )
 
+    return next_story
+
+
+@router.post(
+    "/users/{user_id}/books/{book_id}/book-cover",
+    status_code=status.HTTP_200_OK,
+)
+def generate_book_cover(
+    user_id: str,
+    book_id: str,
+    body: Book,
+    current_user: TokenPayload = Depends(get_current_user),
+    dall_e_agent: DallEAgent = Depends(get_dall_e_agent),
+):
     if user_id != current_user.sub:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user's books",
         )
 
-    story = body.book.get_story()
-    next_story = next_story_agent(
-        genres=body.book.genres,
-        language=body.book.book_language,
-        previous_story=story,
-        choice=body.choice,
-    )
-    new_book = body.book.model_copy()
-    new_book.chapters[-1].content += " " + next_story.content
+    image_url = dall_e_agent(body)
+    response = requests.get(image_url)
 
-    response = table.update_item(
-        Key={"id": book_id},
-        UpdateExpression="SET chapters = :chapters",
-        ExpressionAttributeValues={
-            ":chapters": [chapter.model_dump() for chapter in new_book.chapters]
-        },
-        ReturnValues="ALL_NEW",
-    )
-
-    updated_book = response.get("Attributes")
-    if not updated_book:
-        raise HTTPException(status_code=404, detail="Failed to update chapter")
-    return updated_book
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to retrieve the image from the URL",
+        )
+    else:
+        return StreamingResponse(
+            content=iter([response.content]),
+            media_type="image/png",  # Set the appropriate media type
+        )

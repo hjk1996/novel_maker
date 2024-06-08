@@ -2,20 +2,20 @@ from pydantic import BaseModel
 
 
 class Choices(BaseModel):
-    choice_1: str
-    choice_2: str
-    choice_3: str
-    choice_4: str
+    first: str
+    second: str
+    third: str
+    fourth: str
 
     def __getitem__(self, index):
         match index:
             case 1:
-                return self.choice_1
+                return self.first
             case 2:
-                return self.choice_2
+                return self.second
             case 3:
-                return self.choice_3
+                return self.third
             case 4:
-                return self.choice_4
+                return self.fourth
             case _:
                 raise IndexError("Choices index out of range")
