@@ -9,9 +9,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ap-northeast-2            
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -31,3 +41,27 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/novel-maker:latest
             ${{ secrets.DOCKER_USERNAME }}/novel-maker:${{ github.run_number }}
+      
+      - name: Get the ecs task definition
+        run: |
+          aws ecs describe-task-definition \
+           --task-definition novel-maker \
+           --query taskDefinition \
+           > task-definition.json
+      
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: novel-maker
+          image: ${{ secrets.DOCKER_USERNAME }}/novel-maker:${{ github.run_number }}
+      
+      - name: Deploy new ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          service: novel-maker-service
+          cluster: novel-maker-cluster
+          wait-for-service-stability: true
+
+

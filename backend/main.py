@@ -5,7 +5,7 @@ import logging
 dotenv.load_dotenv()
 
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -47,6 +47,13 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"message": "Internal server error"},
     )
+
+
+@app.get("/health-check",
+        status_code=status.HTTP_200_OK
+        )
+async def health_check():
+    return {"status": "ok"}    
 
 
 app.include_router(books_router)

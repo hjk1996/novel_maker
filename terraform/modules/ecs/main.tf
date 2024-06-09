@@ -48,6 +48,14 @@ resource "aws_ecs_task_definition" "novel_maker" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health-check || exit 1"]
+        interval    = 15
+        timeout     = 5
+        retries     = 3
+        startPeriod = 0
+      }
     }
   ])
 }
