@@ -15,16 +15,20 @@ class DallEAgent:
     
     {content}
     """
+    
+    
 
-    def __init__(self) -> None:
+    def __init__(self, api_key) -> None:
         agent = ChatOpenAI(
-            api_key=os.getenv("API_KEY"),
-            model=os.getenv("MODEL"),
-            max_tokens=os.getenv("NEXT_STORY_MAX_TOKENS"),
-            temperature=os.getenv("TEMPERATURE"),
+            api_key=api_key,
+            model=os.getenv("MODEL", "gpt-4o"),
+            max_tokens=300,
+            temperature=0.9,
         )
         self.agent = agent.with_structured_output(Prompt)
-        self.image_generator = DallEAPIWrapper()
+        self.image_generator = DallEAPIWrapper(
+            api_key=api_key
+        )
 
     def __call__(self, book: Book) -> str:
         prompt: Prompt = self.agent.invoke(

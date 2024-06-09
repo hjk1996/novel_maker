@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user_pool" {
-  name = "novel-maker-user-pool"
+  name = "${var.app_name}-user-pool"
 
   # 비밀번호 정책
   password_policy {
@@ -41,18 +41,18 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain" {
-  domain       = "novel-maker-user-pool-domain"
+  domain       = "${var.app_name}-user-pool-domain"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
 
 # 파라미터 스토어에 저장된 구글 클라이언트 아이디와 시크릿
 data "aws_ssm_parameter" "google_client_id" {
-  name = "novel-maker-google-client-id"
+  name = "${var.app_name}-google-client-id"
 }
 
 data "aws_ssm_parameter" "google_client_secret" {
-  name = "novel-maker-google-client-secret"
+  name = "${var.app_name}-google-client-secret"
 }
 
 

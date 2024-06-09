@@ -38,12 +38,12 @@ book_information
         template=_prompt,
     )
 
-    def __init__(self) -> None:
+    def __init__(self, api_key) -> None:
         agent = ChatOpenAI(
-            api_key=os.getenv("API_KEY"),
-            model=os.getenv("MODEL"),
-            max_tokens=os.getenv("CHOICES_MAX_TOKENS"),
-            temperature=os.getenv("TEMPERATURE"),
+            api_key=api_key,
+            model=os.getenv("MODEL", "gpt-4o"),
+            max_tokens=200,
+            temperature=0.9,
         )
         self.agent = agent.with_structured_output(Choices)
 

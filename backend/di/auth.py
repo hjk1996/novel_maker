@@ -11,8 +11,8 @@ from models import TokenPayload
 # AWS Cognito 설정
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
 COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
-COGNITO_REGION = os.getenv("COGNITO_REGION")
-COGNITO_JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
+REGION = os.getenv("REGION", "ap-northeast-2")
+COGNITO_JWKS_URL = f"https://cognito-idp.{REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

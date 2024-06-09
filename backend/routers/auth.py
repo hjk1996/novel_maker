@@ -16,10 +16,10 @@ from pydantic import BaseModel, Field
 
 router = APIRouter()
 
-CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
+COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID")
 COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
 
-client = boto3.client("cognito-idp", region_name=os.getenv("COGNITO_REGION"))
+client = boto3.client("cognito-idp", region_name=os.getenv("REGION", "ap-northeast-2"))
 
 
 class SignUpBody(BaseModel):
@@ -32,7 +32,7 @@ class SignUpBody(BaseModel):
 async def sign_up(body: SignUpBody):
     try:
         response = client.sign_up(
-            ClientId=CLIENT_ID,
+            ClientId=COGNITO_APP_CLIENT_ID,
             Username=body.email,
             Password=body.password,
             UserAttributes=[
@@ -56,7 +56,7 @@ class VerificationBody(BaseModel):
 async def email_verification(body: VerificationBody):
     try:
         response = client.confirm_sign_up(
-            ClientId=CLIENT_ID, Username=body.email, ConfirmationCode=body.code
+            ClientId=COGNITO_APP_CLIENT_ID, Username=body.email, ConfirmationCode=body.code
         )
         return {"message": "Email verified succesfully"}
     except client.exceptions.CodeMismatchException:
@@ -82,7 +82,7 @@ class Token(BaseModel):
 async def sign_in(body: SignInBody):
     try:
         response = client.initiate_auth(
-            ClientId=CLIENT_ID,
+            ClientId=COGNITO_APP_CLIENT_ID,
             AuthFlow="USER_PASSWORD_AUTH",
             AuthParameters={"USERNAME": body.email, "PASSWORD": body.password},
         )
@@ -104,7 +104,7 @@ class RefreshTokenBody(BaseModel):
 async def refresh_token(body: RefreshTokenBody):
     try:
         response = client.initiate_auth(
-            ClientId=CLIENT_ID,
+            ClientId=COGNITO_APP_CLIENT_ID,
             AuthFlow="REFRESH_TOKEN_AUTH",
             AuthParameters={"REFRESH_TOKEN": body.refresh_token},
         )
