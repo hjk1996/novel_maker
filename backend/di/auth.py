@@ -47,3 +47,9 @@ def verify_token(token: str):
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = verify_token(token)
     return TokenPayload(sub=payload["sub"], username=payload["username"])
+
+
+
+
+
+

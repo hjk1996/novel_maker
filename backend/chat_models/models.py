@@ -1,6 +1,10 @@
 from langchain.pydantic_v1 import BaseModel, Field
 
 
+class Prompt(BaseModel):
+    prompt: str = Field(description="prompt")
+
+
 class NextStory(BaseModel):
     content: str = Field(description="A story that fits well with the previous one.")
 

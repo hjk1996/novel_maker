@@ -1,3 +1,3 @@
-from .models import Choices, NextStory
+from .models import Choices, NextStory, Prompt
 
-__all__ = ["Choices", "NextStory"]
+__all__ = ["Choices", "NextStory", Prompt]

@@ -1,22 +1,16 @@
+import io
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import quote
 
-import requests
 
-from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, status, Depends, File, UploadFile
 from pydantic import BaseModel
 
 
 from di.auth import get_current_user
-from di.db import get_book_table
-from di.agent import get_choices_agent, get_next_story_agent, get_dall_e_agent
-from di.http_client import get_http_client
+from di.db import get_book_table, get_book_cover_bucket
 from models import TokenPayload
-from agents import NextStoryAgent, ChoicesAgent
-from models import Book, Chapter, Choices, NextStory
-from agents import ChoicesAgent, NextStoryAgent, DallEAgent
+from models import Book, Chapter
 
 
 router = APIRouter()
@@ -121,6 +115,7 @@ class UpdateBookBody(BaseModel):
     genres: list[str] = None
     book_language: str | None = None
     chapters: list[Chapter] | None = None
+    cover_url: str | None = None
 
 
 @router.patch(
@@ -161,6 +156,10 @@ async def update_book(
         expression_attribute_values[":chapters"] = [
             chapter.model_dump() for chapter in body.chapters
         ]
+
+    if body.cover_url is not None:
+        update_expressions.append("cover_url = :cover_url")
+        expression_attribute_values[":cover_url"] = body.cover_url
 
     if not update_expressions:
         raise HTTPException(status_code=400, detail="No fields provided for update")
@@ -203,44 +202,15 @@ def delete_book(
 
 
 @router.post(
-    "/users/{user_id}/books/{book_id}/choices",
-    response_model=Choices,
-    status_code=status.HTTP_200_OK,
+    "/users/{user_id}/books/{book_id}/book-cover",
+    status_code=status.HTTP_201_CREATED,
 )
-async def generate_choices(
+async def save_book_cover(
     user_id: str,
     book_id: str,
-    body: Book,
-    current_user: TokenPayload = Depends(get_current_user),
-    choices_agent: ChoicesAgent = Depends(get_choices_agent),
-):
-    if user_id != current_user.sub:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this user's books",
-        )
-
-    story = body.get_story_xml()
-    print(story)
-    choices = await choices_agent(language=body.book_language, previous_story=story)
-    return choices
-
-
-class NextStoryBody(BaseModel):
-    book: Book
-    choice: str
-
-
-@router.post(
-    "/users/{user_id}/books/{book_id}/next-story",
-    response_model=NextStory,
-    status_code=status.HTTP_200_OK,
-)
-async def generate_next_story(
-    user_id: str,
-    book_id: str,
-    body: NextStoryBody,
-    next_story_agent: NextStoryAgent = Depends(get_next_story_agent),
+    file: UploadFile = File(),
+    table=Depends(get_book_table),
+    bucket=Depends(get_book_cover_bucket),
     current_user: TokenPayload = Depends(get_current_user),
 ):
     if user_id != current_user.sub:
@@ -248,43 +218,29 @@ async def generate_next_story(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user's books",
         )
-    previous_story = body.book.get_story_xml()
-    print(previous_story)
-    next_story = await next_story_agent(
-        previous_story=previous_story,
-        choice=body.choice,
+
+    bytes_data = await file.read()
+
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"{user_id}/{book_id}/book_cover.{file_extension}"
+
+    # S3에 파일 업로드
+    bucket.put_object(
+        Key=unique_filename, Body=bytes_data, ContentType=file.content_type
     )
 
-    return next_story
+    # 업로드된 파일의 URL 생성
+    file_url = (
+        f"https://{bucket.name}.s3.ap-northeast-2.amazonaws.com/{unique_filename}"
+    )
 
+    table.update_item(
+        Key={"id": book_id},
+        UpdateExpression="SET cover_url = :v",
+        ExpressionAttributeValues={":v": file_url},
+        ReturnValues="ALL_NEW",
+    )
+    
+    
 
-@router.post(
-    "/users/{user_id}/books/{book_id}/book-cover",
-    status_code=status.HTTP_200_OK,
-)
-def generate_book_cover(
-    user_id: str,
-    book_id: str,
-    body: Book,
-    current_user: TokenPayload = Depends(get_current_user),
-    dall_e_agent: DallEAgent = Depends(get_dall_e_agent),
-):
-    if user_id != current_user.sub:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this user's books",
-        )
-
-    image_url = dall_e_agent(body)
-    response = requests.get(image_url)
-
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to retrieve the image from the URL",
-        )
-    else:
-        return StreamingResponse(
-            content=iter([response.content]),
-            media_type="image/png",  # Set the appropriate media type
-        )
+    return {"file_url": file_url}

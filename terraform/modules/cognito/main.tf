@@ -16,7 +16,7 @@ resource "aws_cognito_user_pool" "user_pool" {
     required = true
     mutable  = false
 
-    attribute_data_type = "String"
+    attribute_data_type      = "String"
     developer_only_attribute = false
     string_attribute_constraints {
       min_length = 5
@@ -34,21 +34,21 @@ resource "aws_cognito_user_pool" "user_pool" {
 
   # 이메일 인증 템플릿
   verification_message_template {
-    email_message = "Your verification code is {####}"
-    email_subject = "Verify your email for our app"
+    email_message        = "Your verification code is {####}"
+    email_subject        = "Verify your email for our app"
     default_email_option = "CONFIRM_WITH_CODE"
   }
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain" {
-  domain      = "novel-maker-user-pool-domain"
+  domain       = "novel-maker-user-pool-domain"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
 
 # 파라미터 스토어에 저장된 구글 클라이언트 아이디와 시크릿
 data "aws_ssm_parameter" "google_client_id" {
-    name = "novel-maker-google-client-id"
+  name = "novel-maker-google-client-id"
 }
 
 data "aws_ssm_parameter" "google_client_secret" {
@@ -58,12 +58,12 @@ data "aws_ssm_parameter" "google_client_secret" {
 
 # 구글 oidc 연결
 resource "aws_cognito_identity_provider" "google" {
-  user_pool_id = aws_cognito_user_pool.user_pool.id
+  user_pool_id  = aws_cognito_user_pool.user_pool.id
   provider_name = "Google"
   provider_type = "Google"
   provider_details = {
-    client_id = data.aws_ssm_parameter.google_client_id.value
-    client_secret = data.aws_ssm_parameter.google_client_secret.value
+    client_id        = data.aws_ssm_parameter.google_client_id.value
+    client_secret    = data.aws_ssm_parameter.google_client_secret.value
     authorize_scopes = "openid profile email"
   }
 }
@@ -83,13 +83,13 @@ resource "aws_cognito_user_pool_client" "user_pool_client" {
 
   supported_identity_providers = ["Google"]
 
-  allowed_oauth_flows = ["code", "implicit"]
+  allowed_oauth_flows  = ["code", "implicit"]
   allowed_oauth_scopes = ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
-  
+
 
   callback_urls = ["http://localhost:3000/auth/callback"]
   logout_urls   = ["http://localhost:3000/auth/logout"]
-  
+
   prevent_user_existence_errors = "ENABLED"
 
   token_validity_units {
