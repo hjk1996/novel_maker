@@ -12,8 +12,8 @@ Novel Maker is a project developed to find an easier way to write novels. Users 
 
 ## Tech Stack
 
-# Frontend: Flutter/Dart
-# Backend: Python/FastAPI/LangChain/boto3
-# Database: DynamoDB, S3
-# CICD: Github Action
-# Deployment: AWS ECS
+- Frontend: Flutter/Dart
+- Backend: Python/FastAPI/LangChain/boto3
+- Database: DynamoDB, S3
+- CICD: Github Action
+- Deployment: AWS ECS
